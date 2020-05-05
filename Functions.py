@@ -10,6 +10,7 @@ import pandas as pd
 import math
 import sys
 import datetime
+import time
 #Starting of Function Definations
 
 #function to fetch information in json format from URL. URL should be passed as a parameter  
@@ -238,6 +239,12 @@ def CreateDicofContacts(data,all_company_data):
             all_company_data [value['Id']] = value
     return all_company_data
 
+def CreateDicofJobPostings(data,all_job_posting_data):
+    for indx,value in enumerate(data['Items']):
+        if('Id' in value):
+            all_job_posting_data [value['Id']] = value
+    return all_job_posting_data
+
 def getLookups(url,authHeader):
     getDataUrl = 'https://'+  url + '12twenty.com/api/v2/Lookups?PageSize=500'
     data = ExceptionGet(getDataUrl,authHeader)  #REST call with Authentication header
@@ -352,6 +359,44 @@ def getAllContacts(url,authHeader):
             all_contact_data = CreateDicofContacts(data,all_contact_data)
     return(all_contact_data)
     
+def getAllJobPostings(url,authHeader):
+    getDataUrl = 'https://'+  url + '12twenty.com/Api/V2/job-postings?PageSize=500'
+    data = ExceptionGet(getDataUrl,authHeader)  #REST call with Authentication header
+    data = data.json()
+    all_job_posting_data = {}
+    all_job_posting_data = CreateDicofJobPostings(data,all_job_posting_data)
+    
+    #The code below checks the number of pages of data that is fetched from the query and does GET calls to fetch the data from each respective page. 
+    
+    if 'Total' and 'PageSize' in data:
+        LoopLength = int(data['Total'])/int(data['PageSize']) #calculating the number of calls that will fetch all the data.
+        LoopLength = math.ceil(LoopLength) #rounding the value to highest closest integer.
+        for i in range(2,LoopLength+1): #looping over to fetch data from different pages. 
+            getDataUrl2 = getDataUrl + '&PageNumber=' + str(i) #building seachparameters with the page number. 
+            data = ExceptionGet(getDataUrl2,authHeader) # get Call to fetch data from 12-20
+            data = data.json()
+            all_job_posting_data = CreateDicofJobPostings(data,all_job_posting_data)
+    return(all_job_posting_data)
+
+def getAllJobPostingsByDate(url,authHeader,modify_date_input):
+    getDataUrl = 'https://'+  url + '12twenty.com/Api/V2/job-postings?ModifyFromDate='+modify_date_input+'&PageSize=500'
+    data = ExceptionGet(getDataUrl,authHeader)  #REST call with Authentication header
+    data = data.json()
+    all_job_posting_data_by_date = {}
+    all_job_posting_data_by_date = CreateDicofJobPostings(data,all_job_posting_data_by_date)
+    
+    #The code below checks the nummber of pages of data that is fetched from the query and does GET calls to fetch the data from each respective page. 
+    
+    if 'Total' and 'PageSize' in data:
+        LoopLength = int(data['Total'])/int(data['PageSize']) #calculating the number of calls that will fetch all the data.
+        LoopLength = math.ceil(LoopLength) #rounding the value to highest closest integer.
+        for i in range(2,LoopLength+1): #looping over to fetch data from different pages. 
+            getDataUrl2 = getDataUrl + '&PageNumber=' + str(i) #building seachparameters with the page number. 
+            data = ExceptionGet(getDataUrl2,authHeader) # get Call to fetch data from 12-20
+            data = data.json()
+            all_job_posting_data_by_date = CreateDicofJobPostings(data,all_job_posting_data_by_date)
+            time.sleep(3)
+    return(all_job_posting_data_by_date)
 
 def removeDuplicateStudentGroups(list_for_removal):
     new_list_groups = {}

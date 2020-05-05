@@ -74,6 +74,8 @@ script_company_3 = "ON DUPLICATE KEY UPDATE hs_employer_id = %s, employer_name =
 hiresmith_company_url_start = "https://" + url + "12twenty.com/Companies#/Companies/"
 
 final_dict_company = {}
+final_dict_company_OCI = {}
+final_dict_company_job_posting = {}
 
 mycursor.execute(
     "INSERT INTO " + mySchema + ".job_log (job_name, source, category, status) VALUES ('HS_Company_Step_1', "
@@ -101,6 +103,35 @@ for key in sorted(all_company_data_by_date):
         else:
             industry_value = industry_df.loc[industry_df['detailed_name'] == final_dict_company[key]['Industries'][0][
                 'Name'], 'consolidated_name'].iloc[0]
+
+        #Get Last OCI Date & Last OCI ID
+
+        jobpostings = '12twenty.com/Api/V2/job-postings?PageSize=500&CompanyName=' #UPDATE FOR OVER 500 RESULTS
+        companyname = all_company_data_by_date[key]['Name']
+        getDataUrl2 = 'https://' + url + jobpostings + companyname
+        data2 = custfunc.ExceptionGet(getDataUrl2, authHeader)  # REST call with Authentication header
+        data2 = data2.json()
+        OCIdates = []
+        JobPostings = []
+        if (data2['Items'] != []):
+            for job in data2['Items']:
+                if(job['CompanyId'] == key and job['OciId'] != 0 and job['InterviewDates'] != []):
+                    for date in job['InterviewDates']:
+                        OCIdates.append([job['OciId'], date])
+                if(job['CompanyId'] == key and job['OciId'] == 0):
+                    JobPostings.append([job['Id'], job["PostedDate"]])
+        if (OCIdates != []):
+            LastOCI = max(OCIdates, key=lambda x: x[1])
+            LastOCIDate = LastOCI[1]
+            LastOCIId = LastOCI[0]
+            key = str(key)
+            final_dict_company_OCI[key] = {'Last OCI Date': LastOCIDate,'Last OCI ID' : LastOCIId}
+        if (JobPostings != []):
+            LastJobPosting = max(JobPostings, key=lambda x: x[1])
+            LastPostingDate = LastJobPosting[1]
+            LastPostingId = LastJobPosting[0]
+            key = str(key)
+            final_dict_company_job_posting[key] = {'Last Job Posting Date': LastPostingDate,'Last Job Posting ID' : LastPostingId}
 
         # Converting datetime object to string
         dateTimeObj = datetime.now()

@@ -74,8 +74,6 @@ script_company_3 = "ON DUPLICATE KEY UPDATE hs_employer_id = %s, employer_name =
 hiresmith_company_url_start = "https://" + url + "12twenty.com/Companies#/Companies/"
 
 final_dict_company = {}
-final_dict_company_OCI = {}
-final_dict_company_job_posting = {}
 
 mycursor.execute(
     "INSERT INTO " + mySchema + ".job_log (job_name, source, category, status) VALUES ('HS_Company_Step_1', "
